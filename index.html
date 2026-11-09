@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Vault">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://accounts.google.com; style-src 'unsafe-inline' https://accounts.google.com; img-src 'self' data: https:; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com; frame-src https://accounts.google.com; manifest-src 'self'; worker-src 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://accounts.google.com; style-src 'unsafe-inline' https://accounts.google.com; img-src 'self' data: https:; connect-src 'self' https://api.pwnedpasswords.com https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com; frame-src https://accounts.google.com; manifest-src 'self'; worker-src 'self'; form-action 'none'">
 <title>Vault</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%235b8cff'/%3E%3Crect x='18' y='28' width='28' height='22' rx='4' fill='white'/%3E%3Cpath d='M23 28v-6a9 9 0 0 1 18 0v6' fill='none' stroke='white' stroke-width='5'/%3E%3C/svg%3E">
 <style>
@@ -24,7 +24,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .hide{display:none!important}
 ::selection{background:color-mix(in srgb,var(--acc) 40%,transparent)}
 /* layout */
-.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.app{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100vh}
 .side{background:var(--bg2);border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh}
 .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 16px;font-weight:700;font-size:17px}
 .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--acc),color-mix(in srgb,var(--acc) 55%,#c86dff));display:grid;place-items:center;box-shadow:0 6px 18px color-mix(in srgb,var(--acc) 40%,transparent)}
@@ -48,7 +48,7 @@ main{padding:28px 34px 60px;max-width:1040px;width:100%}
 .ptitle h1{font-size:24px;margin:0;letter-spacing:-.3px}
 .ptitle p{margin:2px 0 0;color:var(--mute);font-size:13.5px}
 @media (max-width:820px){
-  .app{grid-template-columns:1fr}
+  .app{grid-template-columns:minmax(0,1fr)}
   .side{position:fixed;bottom:0;top:auto;left:0;right:0;height:auto;flex-direction:row;padding:6px;z-index:20;border-right:0;border-top:1px solid var(--line);justify-content:space-around}
   .brand,.sidefoot,.nav .badge{display:none}
   .nav{flex-direction:column;gap:2px;font-size:11px;padding:6px 10px;text-align:center;width:auto}
@@ -176,8 +176,8 @@ kbd{font:11.5px var(--mono);background:var(--panel2);border:1px solid var(--line
 .lnk{background:none;border:0;color:var(--acc);cursor:pointer;padding:4px 6px;font-weight:500;border-radius:6px}
 .lnk:hover{background:var(--hover)}
 /* health */
-.hgrid{display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:center}
-@media (max-width:640px){.hgrid{grid-template-columns:1fr}}
+.hgrid{display:grid;grid-template-columns:200px minmax(0,1fr);gap:16px;align-items:center}
+@media (max-width:640px){.hgrid{grid-template-columns:minmax(0,1fr)}}
 .ring{position:relative;width:170px;height:170px;margin:auto}
 .ring svg{transform:rotate(-90deg)}
 .ring .num{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
@@ -307,6 +307,7 @@ body[data-size=xl] .app,body[data-size=xl] dialog{zoom:1.25}
   </aside>
 
   <main>
+    <div class="banner info hide" id="installHint"><span>📲 <span id="installText"></span></span><button class="btn sm hide" id="installGo">Install</button><button class="btn ghost sm" id="installHide">Got it</button></div>
     <!-- ============ GENERATOR ============ -->
     <section id="v-gen">
       <div class="ptitle"><div><h1>Generator</h1><p>Make a strong password in one click. Everything happens on your computer.</p></div></div>
@@ -438,6 +439,7 @@ body[data-size=xl] .app,body[data-size=xl] dialog{zoom:1.25}
           <div class="field"><div class="withbtns"><input class="input" type="password" id="master" placeholder="Master password" autocomplete="current-password" style="padding-right:46px;font-size:16px"><div class="acts"><button class="ib eye" data-for="master" title="Show">👁</button></div></div></div>
           <div class="err" id="unlockErr"></div>
           <button class="btn big" id="unlock">Unlock</button>
+          <button class="btn ghost big hide" id="quickBtn" style="margin-top:8px"></button>
         </div>
         <div class="linkrow"><button class="lnk" id="restoreFile2">⬆ Restore a backup file</button><button class="lnk driveOnly" id="restoreDrive2">☁ Restore from Google Drive</button></div>
       </div>
@@ -461,7 +463,7 @@ body[data-size=xl] .app,body[data-size=xl] dialog{zoom:1.25}
         </div>
         <div class="chips" id="filters" style="margin-bottom:14px"></div>
         <div class="list" id="entries"></div>
-        <div class="footstat" id="vFoot"></div>
+        <div class="footstat" id="vFoot"><button class="lnk hide" id="openTrash">🗑 Trash</button></div>
       </div>
     </section>
 
@@ -495,6 +497,7 @@ body[data-size=xl] .app,body[data-size=xl] dialog{zoom:1.25}
               <div class="stat"><b id="hOld" style="color:var(--warn)">0</b><span>older than a year</span></div>
             </div>
           </div>
+          <div class="opt" style="border-top:1px solid var(--line);margin-top:16px"><div><div class="ot">Check for leaked passwords</div><div class="od">Compares your passwords with ones found in data breaches. Only 5 characters of a scrambled fingerprint are sent, never a password.</div><div class="od" id="leakMsg" style="margin-top:4px;font-weight:600"></div></div><button class="btn sm" id="leakBtn">Check now</button></div>
           <div id="hList" style="margin-top:16px"></div>
         </div>
       </div>
@@ -504,6 +507,7 @@ body[data-size=xl] .app,body[data-size=xl] dialog{zoom:1.25}
         <div class="withbtns"><input class="input mono" type="password" id="testPw" placeholder="Type a password…" autocomplete="off" style="padding-right:46px"><div class="acts"><button class="ib eye" data-for="testPw" title="Show">👁</button></div></div>
         <div class="meter" id="tMeter"><i></i><i></i><i></i><i></i><i></i></div><div class="mtext" id="tText"></div>
         <ul class="tips" id="tTips"></ul>
+        <button class="btn ghost sm" id="testLeak" style="margin-top:10px">Check if it has been leaked</button>
       </div>
     </section>
 
@@ -553,6 +557,7 @@ body[data-size=xl] .app,body[data-size=xl] dialog{zoom:1.25}
         <div class="opt"><div><div class="ot">Clear copied passwords</div><div class="od">Wipes the clipboard after copying</div></div>
           <select class="input" id="oClip"><option value="10">After 10 seconds</option><option value="30">After 30 seconds</option><option value="60">After 1 minute</option><option value="120">After 2 minutes</option><option value="0">Never</option></select></div>
         <div class="opt"><div><div class="ot">Ask for master password before exporting</div><div class="od">Protects .txt and .csv exports, which aren't encrypted</div></div><label class="sw"><input type="checkbox" id="oConfirmExport"><span></span></label></div>
+        <div class="opt hide" id="quickRow"><div><div class="ot" id="quickTitle">Quick unlock</div><div class="od">Open the vault with your face, fingerprint or device PIN instead of typing the master password. You can still use the master password any time.</div></div><button class="btn sm" id="quickToggle">Turn on</button></div>
         <div class="opt"><div><div class="ot">Show passwords when opening an entry</div><div class="od">Off = passwords stay hidden until you click 👁</div></div><label class="sw"><input type="checkbox" id="oReveal"><span></span></label></div>
       </div>
 
@@ -626,6 +631,7 @@ body[data-size=xl] .app,body[data-size=xl] dialog{zoom:1.25}
           <span><kbd>Esc</kbd></span><span>Close a window</span>
         </div>
       </div>
+      <p class="footstat" id="verLine"></p>
     </section>
   </main>
 </div>
@@ -678,6 +684,12 @@ body[data-size=xl] .app,body[data-size=xl] dialog{zoom:1.25}
 </dialog>
 
 <input type="file" id="fileIn" accept=".json,application/json" hidden>
+<dialog id="trashDlg" style="width:min(520px,94vw)">
+  <h3>Trash</h3>
+  <p class="dtext">Deleted passwords and 2FA accounts stay here for 30 days.</p>
+  <div id="trashList" style="max-height:55vh;overflow:auto"></div>
+  <div class="dacts"><button class="btn danger sm" id="trashEmpty" style="margin-right:auto">Empty trash</button><button class="btn" id="trashClose">Done</button></div>
+</dialog>
 <dialog id="authDlg" style="width:min(480px,94vw)">
   <h3 id="adTitle">Add account</h3>
   <div class="seg" id="adSeg" style="margin:6px 0 14px;display:flex"><button data-t="scan" style="flex:1">📷 Scan QR</button><button data-t="pic" style="flex:1">🖼 Picture</button><button data-t="key" style="flex:1">⌨ Type key</button></div>
@@ -787,6 +799,17 @@ async function copy(text, label = "Copied"){
   if (S.clipSecs) clipTimer = setTimeout(() => navigator.clipboard.writeText("").catch(() => {}), S.clipSecs * 1000);
 }
 function download(name, text, type){
+  // on phones, open the share sheet so the file can be saved to Files / iCloud Drive
+  const touchDev = !!(window.matchMedia && matchMedia("(hover:none) and (pointer:coarse)").matches);
+  if (touchDev && navigator.canShare && navigator.share) {
+    try {
+      const f = new File([text], name, { type });
+      if (navigator.canShare({ files:[f] })) { navigator.share({ files:[f], title:name }).catch(e => { if (!e || e.name !== "AbortError") anchorDownload(name, text, type); }); return; }
+    } catch {}
+  }
+  anchorDownload(name, text, type);
+}
+function anchorDownload(name, text, type){
   const url = URL.createObjectURL(new Blob([text], { type }));
   const a = el("a", { href:url, download:name }); document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 3000);
@@ -1202,6 +1225,7 @@ function mergeData(other){
   const before = V.data.entries.length;
   V.data.entries = V.data.entries.filter(e => !(del[e.id] && del[e.id] >= e.updated));
   V.data.deleted = del;
+  mergeTrash(other);
   return { added, updated, removed: before - V.data.entries.length };
 }
 
@@ -1360,7 +1384,8 @@ async function lock(msg){
   if (!V) return;
   if (pending) await persist();
   if (driveOn() && drive.syncOnLock && driveDirty && tokenValid()) await Promise.race([driveSync(false), new Promise(r => setTimeout(r, 8000))]);
-  V = null; pending = 0;
+  V = null; pending = 0; leaked.clear();
+  if ($("trashDlg").open) $("trashDlg").close();
   if ($("drawer").open) $("drawer").close();
   if ($("authDlg").open) { stopCam(); $("authDlg").close(); }
   refreshAll();
@@ -1394,12 +1419,17 @@ async function doUnlock(){
   $("unlock").disabled = true; $("unlock").textContent = "Unlocking…"; $("unlockErr").textContent = "";
   try {
     V = await openBlob(cachedBlob, $("master").value);
-    V.data.deleted ||= {};
-    $("master").value = ""; touch(); requestPersist(); refreshAll();
-    if (driveOn()) driveSync(true); // this click lets Google's sign-in window open
-    afterUnlock();
+    onUnlocked();
   } catch { $("unlockErr").textContent = "That's not the right master password."; $("master").select(); }
   $("unlock").disabled = false; $("unlock").textContent = "Unlock";
+}
+function onUnlocked(){
+  V.data.deleted ||= {}; V.data.trash ||= [];
+  $("master").value = ""; $("unlockErr").textContent = ""; touch(); requestPersist();
+  if (purgeTrash()) changed();
+  refreshAll();
+  if (driveOn()) driveSync(true); // the unlock click lets Google's sign-in window open
+  afterUnlock();
 }
 let pendingSave = null;
 function afterUnlock(){ if (pendingSave) { const p = pendingSave; pendingSave = null; openEntry(null, p); } }
@@ -1415,7 +1445,7 @@ function avatar(e, node){ node.textContent = S.avatarStyle === "cat" && e.cat ? 
 const pwList = () => V ? V.data.entries.filter(e => e.kind !== "otp") : [];
 function reuseMap(){ const m = {}; pwList().forEach(e => { if (e.pw) (m[e.pw] ||= []).push(e.id); }); return m; }
 const YEAR = 365 * 864e5;
-function issuesOf(e, reuse){ const w = []; if (estimate(e.pw).bits < 45) w.push("weak"); if (reuse[e.pw] && reuse[e.pw].length > 1) w.push("reused"); if (S.staleMonths && Date.now() - e.updated > S.staleMonths * 30.44 * 864e5) w.push("old"); return w; }
+function issuesOf(e, reuse){ const w = []; if (leaked.get(e.pw) > 0) w.push("leaked"); if (estimate(e.pw).bits < 45) w.push("weak"); if (reuse[e.pw] && reuse[e.pw].length > 1) w.push("reused"); if (S.staleMonths && Date.now() - e.updated > S.staleMonths * 30.44 * 864e5) w.push("old"); return w; }
 let filter = "all";
 function renderVault(){
   const has = !!cachedBlob;
@@ -1450,6 +1480,7 @@ function renderVault(){
     const iss = issuesOf(e, reuse);
     const name = el("div", { className:"ename" }, [el("span", { className:"t", textContent: e.site || "(no name)" })]);
     if (e.fav) name.prepend(el("span", { className:"star", textContent:"★" }));
+    if (iss.includes("leaked")) name.append(el("span", { className:"pill bad", textContent:"leaked" }));
     if (iss.includes("weak")) name.append(el("span", { className:"pill bad", textContent:"weak" }));
     if (iss.includes("reused")) name.append(el("span", { className:"pill warn", textContent:"reused" }));
     if (iss.includes("old")) name.append(el("span", { className:"pill warn", textContent:"old" }));
@@ -1571,14 +1602,13 @@ $("eSave").onclick = async () => {
 };
 $("eDel").onclick = async () => {
   const e = editing; if (!e) return;
-  if (S.confirmDelete && !(await modal({ title:`Delete ${e.site}?`, text:"You can undo this for a few seconds afterwards.", ok:"Delete", danger:true }))) return;
+  if (S.confirmDelete && !(await modal({ title:`Delete ${e.site}?`, text:"It goes to the Trash, where you can get it back for 30 days.", ok:"Delete", danger:true }))) return;
   $("drawer").close();
-  V.data.entries = V.data.entries.filter(x => x !== e);
-  (V.data.deleted ||= {})[e.id] = Date.now();
+  trashEntry(e);
   await changed(); refreshAll();
-  toast(`Deleted ${e.site}`, { action:"Undo", onAction: async () => {
+  toast(`${e.site} moved to Trash`, { action:"Undo", onAction: async () => {
     if (!V) return;
-    delete V.data.deleted[e.id]; e.updated = Date.now(); V.data.entries.push(e);
+    untrash(e.id); delete V.data.deleted[e.id]; e.updated = Date.now(); V.data.entries.push(e);
     await changed(); refreshAll(); toast("Restored");
   } });
 };
@@ -1613,7 +1643,7 @@ function renderHealth(){
   if (!flagged.length) { box.append(el("div", { className:"empty", style:"padding:20px" }, [el("div", { className:"big", textContent:"🎉" }), document.createTextNode("Everything looks great.")])); return; }
   box.append(el("h2", { textContent:"Fix these", style:"margin:4px 0 6px" }));
   for (const { e, why } of flagged) {
-    const txt = why.map(w => w === "weak" ? "Weak password" : w === "reused" ? `Same password as ${reuse[e.pw].length - 1} other` : "Not changed in a long time").join(" · ");
+    const txt = why.map(w => w === "leaked" ? "Found in a data leak, change it" : w === "weak" ? "Weak password" : w === "reused" ? `Same password as ${reuse[e.pw].length - 1} other` : "Not changed in a long time").join(" · ");
     const b = el("button", { className:"btn sm", textContent:"Fix" }); b.onclick = () => { go("vault"); openEntry(e.id); };
     box.append(el("div", { className:"issue" }, [avatar(e, el("div", { className:"avatar" })), el("div", { className:"einfo" }, [el("div", { className:"ename", textContent:e.site }), el("div", { className:"euser", textContent:txt })]), b]));
   }
@@ -1886,7 +1916,7 @@ function renderSettings(){
   $("oWhere").textContent = "Saved in " + backendLabel() + ". Every save keeps the one before it, plus 5 rolling snapshots.";
   $$(".needV").forEach(b => b.disabled = !V);
   $("accLocked").classList.toggle("hide", !!V); $("accOpen").classList.toggle("hide", !V);
-  renderDrive(); renderSaves();
+  renderDrive(); renderSaves(); renderQuick();
 }
 $("oPersist").onclick = async () => toast(await requestPersist() ? "Firefox will keep this data, even when space is low" : "Firefox didn't confirm. Keep making backups to be safe");
 function renderCatMgr(){
@@ -2019,6 +2049,7 @@ $("cpGo").onclick = async () => {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   V.key = await deriveKey(a, salt, ITER); V.salt = salt; V.iter = ITER;
   await persist(); $("cpErr").textContent = ""; $("cpOld").value = $("cpNew").value = $("cpNew2").value = "";
+  try { localStorage.removeItem(LS_QUICK); } catch {} renderQuick();
   toast("Master password changed. Old backup files still use the old one");
 };
 $("wipe").onclick = async () => {
@@ -2026,7 +2057,7 @@ $("wipe").onclick = async () => {
   const v = await modal({ title:"Delete the vault from this browser?", text:"All passwords saved in this browser will be erased. Backup files and your Google Drive copy are not touched.\n\nType DELETE to confirm.", input:{ type:"text", placeholder:"DELETE" }, ok:"Delete forever", danger:true,
     validate: x => x === "DELETE" ? "" : "Type DELETE in capital letters." });
   if (v === null) return;
-  await wipeAllStorage(); V = null; pending = 0; refreshAll(); go("vault"); toast("Vault deleted from this browser");
+  await wipeAllStorage(); try { localStorage.removeItem(LS_QUICK); } catch {} V = null; pending = 0; refreshAll(); go("vault"); toast("Vault deleted from this browser");
 };
 
 // ================= status (sidebar) =================
@@ -2046,7 +2077,7 @@ function renderStatus(){
   else { dot("dDrive", "ok"); $("tDrive").textContent = `Drive: synced ${ago(drive.lastSync)}`; }
   $("navCount").textContent = V ? pwList().length : cachedBlob ? "🔒" : "";
 }
-function refreshAll(){ renderVault(); renderHealth(); renderAuth(); renderBanners(); renderStatus(); if (view === "settings") renderSettings(); }
+function refreshAll(){ renderVault(); renderHealth(); renderAuth(); renderTrash(); renderQuick(); renderLeak(); renderBanners(); renderStatus(); if (view === "settings") renderSettings(); }
 
 // ================= Authenticator page (like Microsoft / Google Authenticator) =================
 function b32encode(bytes){
@@ -2228,9 +2259,9 @@ $("adDelete").onclick = async () => {
   const e = adEditing; if (!e) return;
   closeAuthDlg();
   if (!(await modal({ title:`Delete ${e.site}?`, text:"Make sure you've turned off 2FA on that website or have another way to sign in, or you could get locked out.", ok:"Delete", danger:true }))) return;
-  V.data.entries = V.data.entries.filter(x => x !== e); (V.data.deleted ||= {})[e.id] = Date.now();
+  trashEntry(e);
   await changed(); refreshAll();
-  toast(`Deleted ${e.site}`, { action:"Undo", onAction: async () => { if (!V) return; delete V.data.deleted[e.id]; e.updated = Date.now(); V.data.entries.push(e); await changed(); refreshAll(); } });
+  toast(`${e.site} moved to Trash`, { action:"Undo", onAction: async () => { if (!V) return; untrash(e.id); delete V.data.deleted[e.id]; e.updated = Date.now(); V.data.entries.push(e); await changed(); refreshAll(); } });
 };
 
 // what to do with a QR code once it's read
@@ -2311,6 +2342,214 @@ document.addEventListener("paste", e => {
   const t = e.clipboardData && e.clipboardData.getData("text");
   if (t && /^otpauth/i.test(t.trim())) { e.preventDefault(); handleQr(t); }
 });
+
+// ================= trash (deleted items are kept 30 days) =================
+const TRASH_DAYS = 30;
+function trashEntry(e){
+  V.data.entries = V.data.entries.filter(x => x !== e);
+  (V.data.deleted ||= {})[e.id] = Date.now();
+  (V.data.trash ||= []).push({ ...e, trashedAt:Date.now() });
+}
+function untrash(id){ if (V && V.data.trash) V.data.trash = V.data.trash.filter(t => t.id !== id); }
+function purgeTrash(){
+  if (!V || !V.data.trash) return false;
+  const n = V.data.trash.length;
+  V.data.trash = V.data.trash.filter(t => Date.now() - (t.trashedAt || 0) < TRASH_DAYS * 864e5);
+  return V.data.trash.length !== n;
+}
+function mergeTrash(other){
+  const purged = V.data.purged = { ...(other.purged || {}), ...(V.data.purged || {}) };
+  const mine = V.data.trash ||= [];
+  for (const t of other.trash || []) if (!mine.some(x => x.id === t.id)) mine.push(t);
+  V.data.trash = mine.filter(t => !purged[t.id] && !V.data.entries.some(x => x.id === t.id));
+}
+function renderTrash(){
+  const n = V && V.data.trash ? V.data.trash.length : 0;
+  $("openTrash").classList.toggle("hide", !V);
+  $("openTrash").textContent = n ? `🗑 Trash (${n})` : "🗑 Trash";
+  if (!$("trashDlg").open) return;
+  const box = $("trashList"); box.textContent = "";
+  if (!n) { box.append(el("div", { className:"empty", style:"padding:24px", textContent:"The trash is empty." })); $("trashEmpty").classList.add("hide"); return; }
+  $("trashEmpty").classList.remove("hide");
+  V.data.trash.slice().sort((a, b) => b.trashedAt - a.trashedAt).forEach(t => {
+    const left = Math.max(1, Math.ceil(TRASH_DAYS - (Date.now() - t.trashedAt) / 864e5));
+    const r = el("button", { className:"btn ghost sm", textContent:"Restore" });
+    r.onclick = async () => {
+      untrash(t.id); delete (V.data.deleted || {})[t.id];
+      const e = { ...t, updated:Date.now() }; delete e.trashedAt; V.data.entries.push(e);
+      await changed(); refreshAll(); toast(`${t.site || "Item"} restored`);
+    };
+    const x = el("button", { className:"ib", textContent:"✕", title:"Delete forever" });
+    x.onclick = async () => {
+      if (!(await modal({ title:`Delete ${t.site || "this"} forever?`, text:"This can't be undone.", ok:"Delete forever", danger:true }))) return;
+      untrash(t.id); (V.data.purged ||= {})[t.id] = Date.now();
+      await changed(); refreshAll();
+    };
+    box.append(el("div", { className:"issue" }, [avatar(t, el("div", { className:"avatar" })),
+      el("div", { className:"einfo" }, [el("div", { className:"ename", textContent:(t.site || "(no name)") + (t.kind === "otp" ? " (2FA)" : "") }), el("div", { className:"euser", textContent:`${t.user ? t.user + " · " : ""}deleted for good in ${left} day${left === 1 ? "" : "s"}` })]), r, x]));
+  });
+}
+$("openTrash").onclick = () => { $("trashDlg").showModal(); renderTrash(); };
+$("trashClose").onclick = () => $("trashDlg").close();
+$("trashEmpty").onclick = async () => {
+  if (!V || !(await modal({ title:"Empty the trash?", text:`${V.data.trash.length} item(s) will be deleted forever.`, ok:"Empty trash", danger:true }))) return;
+  V.data.purged ||= {}; V.data.trash.forEach(t => V.data.purged[t.id] = Date.now()); V.data.trash = [];
+  await changed(); refreshAll();
+};
+
+// ================= quick unlock (Face ID / Touch ID / Windows Hello) =================
+// The device's own passkey system gives back a secret only after a face/fingerprint/PIN check.
+// That secret unwraps the vault key. The master password is never stored.
+const LS_QUICK = "pwg.quick.v1";
+const quickRec = () => { try { return JSON.parse(localStorage.getItem(LS_QUICK)); } catch { return null; } };
+const quickCapable = () => !!(window.PublicKeyCredential && navigator.credentials && window.isSecureContext && /^https?:$/.test(location.protocol));
+const quickReady = () => { const q = quickRec(); return !!(q && cachedBlob && q.vaultSalt === cachedBlob.salt && quickCapable()); };
+const quickName = () => /iPhone|iPad|iPod/.test(navigator.userAgent) ? "Face ID" : /Macintosh/.test(navigator.userAgent) ? "Touch ID" : /Windows/.test(navigator.userAgent) ? "Windows Hello" : /Android/.test(navigator.userAgent) ? "fingerprint" : "this device's lock";
+const rawAes = bytes => crypto.subtle.importKey("raw", bytes, "AES-GCM", false, ["encrypt","decrypt"]);
+const rnd8 = n => crypto.getRandomValues(new Uint8Array(n));
+async function quickSetup(){
+  if (!V || !cachedBlob) return toast("Unlock your vault first");
+  if (pending) await persist();
+  let raw = null;
+  const pw = await modal({ title:"Confirm it's you", text:`Enter your master password to turn on ${quickName()} unlock.`, input:{ type:"password" }, ok:"Continue",
+    validate: async p => {
+      try {
+        const base = await crypto.subtle.importKey("raw", enc.encode(p), "PBKDF2", false, ["deriveBits"]);
+        const bits = new Uint8Array(await crypto.subtle.deriveBits({ name:"PBKDF2", salt:unb64(cachedBlob.salt), iterations:cachedBlob.iter, hash:"SHA-256" }, base, 256));
+        await crypto.subtle.decrypt({ name:"AES-GCM", iv:unb64(cachedBlob.iv) }, await rawAes(bits), unb64(cachedBlob.ct));
+        raw = bits; return "";
+      } catch { return "Wrong master password."; }
+    } });
+  if (pw === null || !raw) return;
+  try {
+    const prfSalt = rnd8(32), ext = { prf:{ eval:{ first:prfSalt } } };
+    const cred = await navigator.credentials.create({ publicKey:{
+      challenge:rnd8(32), rp:{ name:"Vault", id:location.hostname }, user:{ id:rnd8(16), name:"Vault", displayName:"Vault" },
+      pubKeyCredParams:[{ type:"public-key", alg:-7 }, { type:"public-key", alg:-257 }],
+      authenticatorSelection:{ authenticatorAttachment:"platform", userVerification:"required", residentKey:"preferred" }, timeout:60000, extensions:ext } });
+    const res = (cred.getClientExtensionResults() || {}).prf || {};
+    let out = res.results && res.results.first;
+    if (!out && res.enabled !== false) {
+      const as = await navigator.credentials.get({ publicKey:{ challenge:rnd8(32), rpId:location.hostname, allowCredentials:[{ type:"public-key", id:cred.rawId }], userVerification:"required", timeout:60000, extensions:ext } });
+      const r2 = (as.getClientExtensionResults() || {}).prf || {};
+      out = r2.results && r2.results.first;
+    }
+    if (!out) { raw.fill(0); return modal({ title:"Not supported on this device", text:`This browser can't use ${quickName()} to unlock the vault yet. On iPhone it needs iOS 18 or newer. Your master password still works as always.`, cancel:null }); }
+    const iv = rnd8(12), ct = new Uint8Array(await crypto.subtle.encrypt({ name:"AES-GCM", iv }, await rawAes(new Uint8Array(out)), raw));
+    raw.fill(0);
+    saveJSON(LS_QUICK, { v:1, id:b64(new Uint8Array(cred.rawId)), prfSalt:b64(prfSalt), iv:b64(iv), ct:b64(ct), vaultSalt:cachedBlob.salt });
+    renderQuick(); toast(`${quickName()} unlock is on`);
+  } catch (e) {
+    raw && raw.fill(0);
+    if (!e || e.name !== "NotAllowedError") toast(`Couldn't set up ${quickName()} unlock on this device`);
+  }
+}
+async function quickUnlock(){
+  const q = quickRec(); if (!q || !cachedBlob) return;
+  $("unlockErr").textContent = "";
+  try {
+    const as = await navigator.credentials.get({ publicKey:{ challenge:rnd8(32), rpId:location.hostname, allowCredentials:[{ type:"public-key", id:unb64(q.id) }], userVerification:"required", timeout:60000, extensions:{ prf:{ eval:{ first:unb64(q.prfSalt) } } } } });
+    const res = (as.getClientExtensionResults() || {}).prf || {}, out = res.results && res.results.first;
+    if (!out) throw new Error("no-prf");
+    const raw = new Uint8Array(await crypto.subtle.decrypt({ name:"AES-GCM", iv:unb64(q.iv) }, await rawAes(new Uint8Array(out)), unb64(q.ct)));
+    const key = await rawAes(raw); raw.fill(0);
+    const pt = await crypto.subtle.decrypt({ name:"AES-GCM", iv:unb64(cachedBlob.iv) }, key, unb64(cachedBlob.ct));
+    V = { key, salt:unb64(cachedBlob.salt), iter:cachedBlob.iter, data:JSON.parse(dec.decode(pt)) };
+    onUnlocked();
+  } catch (e) {
+    if (e && e.name === "NotAllowedError") return;      // cancelled
+    $("unlockErr").textContent = `${quickName()} unlock didn't work. Use your master password instead.`;
+  }
+}
+function renderQuick(){
+  const b = $("quickBtn"); b.classList.toggle("hide", !quickReady() || !!V); b.textContent = `Unlock with ${quickName()}`;
+  const row = $("quickRow"); if (!row) return;
+  row.classList.toggle("hide", !quickCapable());
+  const on = quickReady();
+  $("quickTitle").textContent = `Unlock with ${quickName()}`;
+  $("quickToggle").textContent = on ? "Turn off" : "Turn on";
+  $("quickToggle").className = "btn sm" + (on ? " ghost" : "");
+  $("quickToggle").disabled = !on && !V;
+}
+$("quickBtn").onclick = quickUnlock;
+$("quickToggle").onclick = () => {
+  if (quickReady()) { localStorage.removeItem(LS_QUICK); renderQuick(); return toast("Quick unlock turned off"); }
+  quickSetup();
+};
+
+// ================= leaked password check =================
+// Uses the public "Have I Been Pwned" list. Only the first 5 characters of a scrambled
+// fingerprint (SHA-1) are sent, so neither the password nor its full fingerprint leaves this device.
+const leaked = new Map();
+async function pwnedCount(pw){
+  const h = [...new Uint8Array(await crypto.subtle.digest("SHA-1", enc.encode(pw)))].map(b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+  const r = await fetch("https://api.pwnedpasswords.com/range/" + h.slice(0, 5));
+  if (!r.ok) throw new Error("lookup failed");
+  for (const line of (await r.text()).split("\n")) { const [suf, c] = line.trim().split(":"); if (suf === h.slice(5)) return +c || 1; }
+  return 0;
+}
+let leakBusy = false;
+async function leakScan(){
+  if (!V || leakBusy) return;
+  const pws = [...new Set(pwList().map(e => e.pw).filter(Boolean))];
+  if (!pws.length) return toast("No passwords to check yet");
+  leakBusy = true; $("leakBtn").disabled = true;
+  try {
+    let done = 0;
+    for (const pw of pws) {
+      if (!V) break;
+      leaked.set(pw, await pwnedCount(pw));
+      $("leakMsg").textContent = `Checking… ${++done} of ${pws.length}`;
+    }
+    const n = pwList().filter(e => leaked.get(e.pw) > 0).length;
+    S.leakAt = Date.now(); saveS();
+    leakBusy = false; refreshAll();
+    toast(n ? `${n} of your passwords appeared in a data leak. Change them` : "Good news: none of your passwords were found in known leaks", { ms:6000 });
+  } catch { $("leakMsg").textContent = "Couldn't reach the leak list. Check your internet and try again."; }
+  leakBusy = false; $("leakBtn").disabled = false;
+}
+function renderLeak(){
+  if (leakBusy) return;
+  const n = V ? pwList().filter(e => leaked.get(e.pw) > 0).length : 0;
+  $("leakMsg").textContent = leaked.size ? (n ? `⚠ ${n} password${n === 1 ? " was" : "s were"} found in known data leaks.` : "✓ None found in known leaks (checked just now).")
+    : S.leakAt ? `Last checked ${ago(S.leakAt)}.` : "Not checked yet.";
+}
+$("leakBtn").onclick = leakScan;
+$("testLeak").onclick = async () => {
+  const v = $("testPw").value; if (!v) return toast("Type a password first");
+  try { const n = await pwnedCount(v); $("tTips").prepend(el("li", { textContent: n ? `⚠ This password has appeared in data leaks ${n.toLocaleString()} times. Don't use it.` : "✓ Not found in any known data leak.", style:`color:var(--${n ? "bad" : "ok"})` })); }
+  catch { toast("Couldn't reach the leak list. Check your internet"); }
+};
+
+// ================= installing as an app + updates =================
+const APP_VERSION = "7";
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const isStandalone = navigator.standalone === true || !!(window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+let installEvt = null;
+function renderInstall(){
+  let hidden = true; try { hidden = !!localStorage.getItem("pwg.installHint"); } catch {}
+  const show = !hidden && !isStandalone && location.protocol === "https:" && (isIOS || installEvt);
+  $("installHint").classList.toggle("hide", !show);
+  if (!show) return;
+  $("installText").textContent = isIOS ? "Install Vault on this iPhone: tap the Share button, then “Add to Home Screen”. It opens like an app and works with no internet."
+    : "Install Vault as an app on this device. It gets its own icon and works with no internet.";
+  $("installGo").classList.toggle("hide", !installEvt);
+}
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; renderInstall(); });
+$("installGo").onclick = async () => { if (!installEvt) return; installEvt.prompt(); installEvt = null; renderInstall(); };
+$("installHide").onclick = () => { try { localStorage.setItem("pwg.installHint", "1"); } catch {} renderInstall(); };
+let updateShown = false;
+function updateReady(){
+  if (updateShown) return; updateShown = true;
+  toast("A new version of Vault is ready", { action:"Reload", ms:20000, onAction: async () => { if (V && pending) await persist(); location.reload(); } });
+}
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+  const had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("message", e => { if (e.data && e.data.type === "update") updateReady(); });
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (had) updateReady(); });
+}
+$("verLine").textContent = `Vault version ${APP_VERSION}${isStandalone ? " · installed app" : ""}`;
+renderInstall();
 
 // ================= navigation & keys =================
 let view = "gen";
