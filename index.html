@@ -1232,8 +1232,10 @@ function mergeData(other){
 // ================= Google Drive (encrypted file inside a folder) =================
 const API = "https://www.googleapis.com/drive/v3", UP = "https://www.googleapis.com/upload/drive/v3";
 const DRIVE_FILE = "Password Vault (encrypted).json", FOLDER_MIME = "application/vnd.google-apps.folder";
-let drive = loadJSON(LS_DRIVE, { clientId:"", fileId:"", folderId:"", folderName:"Password Vault", syncMode:"instant", syncOnLock:true, dailyBackups:true, keepBackups:14, connected:false, lastSync:0, lastDaily:"" });
+const DEFAULT_CLIENT_ID = "390004469193-clfn2s191c1sko7pmfp9tc2grbvnv4pv.apps.googleusercontent.com";
+let drive = loadJSON(LS_DRIVE, { clientId:DEFAULT_CLIENT_ID, fileId:"", folderId:"", folderName:"Password Vault", syncMode:"instant", syncOnLock:true, dailyBackups:true, keepBackups:14, connected:false, lastSync:0, lastDaily:"" });
 if (drive.auto === false && !drive.syncModeSet) { drive.syncMode = "manual"; }
+if (!drive.clientId) drive.clientId = DEFAULT_CLIENT_ID;   // older saves had it blank
 const saveDrive = () => saveJSON(LS_DRIVE, drive);
 let gToken = null, gTokenExp = 0, driveTimer = null, driveBusy = false, driveMsg = "", driveErr = false;
 try { const t = JSON.parse(sessionStorage.getItem("pwg.gtok") || "null"); if (t && t.exp > Date.now()) { gToken = t.tok; gTokenExp = t.exp; } } catch {}
@@ -2008,7 +2010,7 @@ function renderDrive(){
     box.append(card);
     // settings
     const cid = el("input", { className:"input mono", value:drive.clientId, placeholder:"…apps.googleusercontent.com", style:"font-size:12px;min-width:260px" });
-    cid.onchange = () => { drive.clientId = cid.value.trim(); drive.connected = false; gToken = null; saveDrive(); toast("Client ID saved"); renderDrive(); renderVault(); };
+    cid.onchange = () => { drive.clientId = cid.value.trim() || DEFAULT_CLIENT_ID; cid.value = drive.clientId; drive.connected = false; gToken = null; saveDrive(); toast("Client ID saved"); renderDrive(); renderVault(); };
     const fold = el("input", { className:"input", value:drive.folderName });
     fold.onchange = async () => { drive.folderName = fold.value.trim() || "Password Vault"; fold.value = drive.folderName; saveDrive(); toast("Folder name saved"); if (driveOn() && V && tokenValid()) driveSync(false); };
     const mode = el("select", { className:"input" });
